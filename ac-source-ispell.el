@@ -35,22 +35,33 @@
 (require 'ispell)
 
 (defvar ac-ispell-cache (make-hash-table :test 'equal))
-;; (defvar ac-ispell-cache (make-hash-table :test 'equal :size 17576)) ; 17576=26^3
 
 (defun ac-candidate-ispell-words ()
   (let* ((key (downcase (substring ac-prefix 0 3)))
          (cache (gethash key ac-ispell-cache)))
-    (if cache
-        cache
-      (let ((value (lookup-words (concat key "*") ispell-complete-word-dict)))
+    (cond
+     ((or (not (string-match "^[a-z]+$" key))
+          (eq cache 'none))
+      nil)
+     (cache cache)
+     (t
+      (let ((value (or (lookup-words (concat key "*") ispell-complete-word-dict)
+                       'none)))
         (puthash key value ac-ispell-cache)
-        value))))
+        value)))))
 
-(defvar ac-source-ispell
-  '((candidates . ac-candidate-ispell-words)
-    ;; (symbol . "i")
-    (requires . 3))
-  "Source for ispell.")
+(if (fboundp 'ac-define-source)
+
+    ;; define ac-source-ispell and ac-complete-ispell
+    (ac-define-source ispell
+      '((candidates . ac-candidate-ispell-words)
+        (symbol . "i")
+        (requires . 3)))
+
+  (defvar ac-source-ispell
+    '((candidates . ac-candidate-ispell-words)
+      (requires . 3))
+    "Source for ispell."))
 
 (provide 'ac-source-ispell)
 
