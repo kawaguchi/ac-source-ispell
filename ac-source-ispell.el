@@ -4,7 +4,7 @@
 
 ;; Author:   tequilasunset <tequilasunset.mac@gmail.com>
 ;; Keywords: ispell
-;; Version:  0.1
+;; Version:  0.2
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -34,32 +34,44 @@
 (require 'auto-complete)
 (require 'ispell)
 
-(defvar ac-ispell-cache (make-hash-table :test 'equal))
+(defconst ac-ispell-cache (make-hash-table :test 'equal))
+
+(defvar ac-ispell-cache-limit 30)
+
+(defun ac-clear-ispell-cache (&optional limit)
+  (interactive)
+  (let ((table ac-ispell-cache))
+    (when (or (not limit)
+              (>= (hash-table-count table) limit))
+      (clrhash table))))
 
 (defun ac-candidate-ispell-words ()
-  (let* ((key (downcase (substring ac-prefix 0 3)))
-         (cache (gethash key ac-ispell-cache)))
+  (let* ((table ac-ispell-cache)
+         (key (downcase (substring ac-prefix 0 3)))
+         (cache (gethash key table))
+         words)
     (cond
      ((or (not (string-match "^[a-z]+$" key))
           (eq cache 'none))
       nil)
      (cache cache)
      (t
-      (let ((value (or (lookup-words (concat key "*") ispell-complete-word-dict)
-                       'none)))
-        (puthash key value ac-ispell-cache)
-        value)))))
+      (setq words (or (lookup-words (concat key "*") ispell-complete-word-dict)
+                      'none))
+      (puthash key words table)))))
 
 (if (fboundp 'ac-define-source)
 
     ;; define ac-source-ispell and ac-complete-ispell
     (ac-define-source ispell
-      '((candidates . ac-candidate-ispell-words)
+      '((init . (ac-clear-ispell-cache ac-ispell-cache-limit))
+        (candidates . ac-candidate-ispell-words)
         (symbol . "i")
         (requires . 3)))
 
   (defvar ac-source-ispell
-    '((candidates . ac-candidate-ispell-words)
+    '((init . (ac-clear-ispell-cache ac-ispell-cache-limit))
+      (candidates . ac-candidate-ispell-words)
       (requires . 3))
     "Source for ispell."))
 
