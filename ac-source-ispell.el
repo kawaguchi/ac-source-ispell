@@ -29,6 +29,8 @@
 
 ;;; Commentary:
 
+;; Define ac-source-ispell (variable) and ac-complete-ispell (command).
+
 ;;; Code:
 
 (require 'auto-complete)
@@ -51,13 +53,11 @@
          (cache (gethash key table))
          words)
     (cond
-     ((or (not (string-match "^[a-z]+$" key))
-          (eq cache 'none))
-      nil)
+     ((not (string-match "^[a-z]+$" key)) nil)
      (cache cache)
      (t
       (setq words (or (lookup-words (concat key "*") ispell-complete-word-dict)
-                      'none))
+                      t))
       (puthash key words table)))))
 
 (if (fboundp 'ac-define-source)
