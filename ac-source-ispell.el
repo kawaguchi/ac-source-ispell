@@ -66,7 +66,8 @@
     (ac-define-source ispell
       '((init . (ac-clear-ispell-cache ac-ispell-cache-limit))
         (candidates . ac-candidate-ispell-words)
-        (symbol . "i")
+        (symbol . "d")
+        (document . (lambda (word) (shell-command-to-string (concat "dict " word))))
         (requires . 3)))
 
   (defvar ac-source-ispell
